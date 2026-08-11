@@ -1,0 +1,316 @@
+Index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>iOS System Recovery</title>
+<style>
+  * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+  body {
+    margin: 0;
+    height: 100vh;
+    background: #000000;
+    color: #ff3b30; /* Rosso ufficiale Apple iOS */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px;
+    overflow: hidden;
+    touch-action: none;
+  }
+  
+  /* RIPRODUZIONE FEDELE DEL POP-UP DI NOTIFICA DI SYSTEMA DI IOS */
+  .ios-alert-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.56);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+  .ios-alert-box {
+    width: 270px;
+    background: rgba(25, 25, 25, 0.88);
+    border-radius: 14px;
+    color: #ffffff;
+    text-align: center;
+    animation: popIn 0.25s cubic-bezier(0.1, 0.8, 0.3, 1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  .ios-alert-content { padding: 18px 16px; }
+  .ios-alert-title { font-weight: 600; font-size: 17px; margin-bottom: 4px; color: #ff3b30; }
+  .ios-alert-message { font-size: 13px; line-height: 1.4; color: #dddddd; }
+  .ios-alert-btn {
+    border-top: 0.5px solid rgba(255,255,255,0.15);
+    color: #007af5; /* Blu pulsanti iOS */
+    font-size: 17px;
+    font-weight: 600;
+    padding: 12px;
+    cursor: pointer;
+  }
+  .ios-alert-btn:active { background: rgba(255,255,255,0.08); }
+
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #555;
+    font-family: monospace;
+  }
+  .main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    opacity: 0.1; /* Nascosto parzialmente finché non si clicca il popup */
+    transition: opacity 0.5s ease;
+  }
+  .alert-header {
+    border: 1px solid #ff3b30;
+    padding: 15px;
+    text-align: center;
+    background: rgba(255, 59, 48, 0.08);
+    margin-bottom: 20px;
+    border-radius: 8px;
+  }
+  .alert-header h1 { margin: 0 0 5px 0; font-size: 18px; letter-spacing: 0.5px; }
+  .alert-header p { margin: 0; font-size: 11px; color: #fff; opacity: 0.8; }
+  
+  #terminal {
+    height: 180px;
+    background: #080808;
+    border: 1px solid #222;
+    border-radius: 6px;
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    padding: 10px;
+    overflow: hidden;
+    white-space: pre-wrap;
+    color: #30d158; /* Verde mela iOS */
+    line-height: 1.4;
+  }
+  .progress-section { margin: 20px 0; }
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    margin-bottom: 6px;
+    color: #ff9f0a; /* Arancione iOS */
+    font-family: monospace;
+  }
+  .progress-bar-container {
+    border-radius: 4px;
+    background: #1c1c1e;
+    height: 12px;
+    overflow: hidden;
+  }
+  #progress-bar {
+    width: 0%;
+    height: 100%;
+    background: #ff9f0a;
+    transition: width .1s linear;
+  }
+  #countdown-area { display: none; text-align: center; margin-top: 10px; }
+  .countdown-label { font-size: 11px; letter-spacing: 1px; color: #ff3b30; font-family: monospace; }
+  #timer { font-size: 55px; font-weight: bold; color: #ff3b30; line-height: 1; margin-top: 5px; }
+  
+  @keyframes popIn {
+    0% { transform: scale(1.15); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- IL FINTO AVVISO DI SICUREZZA IN STILE APPLE -->
+<div class="ios-alert-overlay" id="popup-overlay">
+  <div class="ios-alert-box">
+    <div class="ios-alert-content">
+      <div class="ios-alert-title">Security Alert</div>
+      <div class="ios-alert-message">iOS Kernel panic detected. Unauthorized remote exploit is modifying local NAND memory. Tap OK to isolate.</div>
+    </div>
+    <div class="ios-alert-btn" onclick="bypassIosRestrictions()">OK</div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <span>[APPLE_CORE_SECURITY]</span>
+  <span id="mock-battery">BATTERY: 100%</span>
+</div>
+
+<div class="main-content" id="main-ui">
+  <div class="alert-header">
+    <h1>⚠️ IPHONE SYSTEM BREACH</h1>
+    <p>ROOT EXPLOIT STABLE — PERSISTENCE INJECTED</p>
+  </div>
+
+  <div id="terminal"></div>
+
+  <div class="progress-section">
+    <div class="progress-info">
+      <span id="current-task">Extracting keys...</span>
+      <span id="percentage">0%</span>
+    </div>
+    <div class="progress-bar-container">
+      <div id="progress-bar"></div>
+    </div>
+  </div>
+
+  <div id="countdown-area">
+    <div class="countdown-label">ICLOUD & DEVICE WIPE IN:</div>
+    <div id="timer">05</div>
+  </div>
+</div>
+
+<div class="status-bar" style="justify-content: center; font-size: 10px; color: #333;">
+  CONTAINER_ID: COM.APPLE.SECURITY.FRAMEWORK
+</div>
+
+<script>
+const terminal = document.getElementById("terminal");
+const progressBar = document.getElementById("progress-bar");
+const percentage = document.getElementById("percentage");
+const currentTask = document.getElementById("current-task");
+const countdownArea = document.getElementById("countdown-area");
+const timerDisplay = document.getElementById("timer");
+const popupOverlay = document.getElementById("popup-overlay");
+const mainUi = document.getElementById("main-ui");
+const mockBattery = document.getElementById("mock-battery");
+
+const iosLogs = [
+  "[APFS] Unmounting user data partition...",
+  "[JAILBREAK] TFP0 exploit injected successfully.",
+  "[AMFI] Apple Mobile File Integrity disabled.",
+  "[KEYCHAIN] Copying local iCloud keychain vault...",
+  "[SANDBOX] Escaping Safari web sandbox restrictions...",
+  "[TOKEN] Extracting ApplePay & Wallet tokens...",
+  "[NVRAM] Modifying boot-args to force local loop..."
+];
+
+const iosTargets = [
+  "Uploading: Apple_ID_Security_Tokens",
+  "Extracting: Photos_Camera_Roll.tar",
+  "Targeting: Keychain_Stored_Passwords",
+  "Dumping: iMessage_Local_Database",
+  "Executing: nvram -d (Wiping Recovery)..."
+];
+
+let audioCtx = null;
+
+function playDistortedAlarm() {
+  try {
+    // Genera un suono sintetico distorto usando il chip audio del telefono (Web Audio API)
+    // Questo aggira la necessità di scaricare file .mp3 esterni e funziona istantaneamente
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Oscillatore 1 (Allarme principale)
+    let osc1 = audioCtx.createOscillator();
+    let gain1 = audioCtx.createGain();
+    osc1.type = 'sawtooth'; // Suono distorto tipo sega elettrica
+    osc1.frequency.setValueAtTime(320, audioCtx.currentTime);
+    
+    // Modulatore per fare l'effetto sirena oscillante "uau-uau-uau"
+    let osc2 = audioCtx.createOscillator();
+    let gain2 = audioCtx.createGain();
+    osc2.frequency.setValueAtTime(3, audioCtx.currentTime); // Velocità oscillazione
+    gain2.gain.setValueAtTime(120, audioCtx.currentTime); // Intensità oscillazione
+    
+    osc2.connect(gain2);
+    gain2.connect(osc1.frequency);
+    
+    osc1.connect(gain1);
+    gain1.connect(audioCtx.destination);
+    
+    gain1.gain.setValueAtTime(0.2, audioCtx.currentTime); // Volume
+    
+    osc1.start();
+    osc2.start();
+  } catch(e) {
+    console.log("Audio not supported or blocked");
+  }
+}
+
+function bypassIosRestrictions() {
+  // Nasconde il finto pop-up
+  popupOverlay.style.display = "none";
+  mainUi.style.opacity = "1";
+  
+  // Attiva immediatamente il suono d'allarme (ora permesso perché c'è stato il tocco dell'utente)
+  playDistortedAlarm();
+  
+  // Avvia la finta sequenza di attacco
+  runIosLogs(0);
+}
+
+function runIosLogs(idx) {
+  if (idx < iosLogs.length) {
+    let charIdx = 0;
+    const newline = document.createElement("div");
+    terminal.appendChild(newline);
+
+    const typing = setInterval(() => {
+      newline.textContent += iosLogs[idx][charIdx++];
+      terminal.scrollTop = terminal.scrollHeight;
+      if (charIdx >= iosLogs[idx].length) {
+        clearInterval(typing);
+        setTimeout(() => runIosLogs(idx + 1), 250);
+      }
+    }, 15);
+  } else {
+    runIosTheft(0, 0);
+  }
+}
+
+function runIosTheft(targetIdx, percentVal) {
+  if (percentVal <= 100) {
+    progressBar.style.width = percentVal + "%";
+    percentage.textContent = percentVal + "%";
+
+    // Forza la batteria a crollare vistosamente per simulare il consumo del malware
+    if (percentVal % 10 === 0) {
+      const currentBat = Math.max(1, 100 - Math.floor(percentVal / 1.05));
+      mockBattery.textContent = `BATTERY: ${currentBat}%`;
+      mockBattery.style.color = "#ff3b30";
+    }
+
+    if (percentVal % 20 === 0 && targetIdx < iosTargets.length) {
+      currentTask.textContent = iosTargets[targetIdx];
+      currentTask.style.color = "#ff3b30";
+      
+      const logLine = document.createElement("div");
+      logLine.style.color = "#ff9f0a";
+      logLine.textContent = `[!] Syncing: ${iosTargets[targetIdx]}`;
+      terminal.appendChild(logLine);
+      terminal.scrollTop = terminal.scrollHeight;
+      
+      targetIdx++;
+    }
+
+    setTimeout(() => runIosTheft(targetIdx, percentVal + 1), Math.floor(Math.random() * 35) + 20);
+  } else {
+    currentTask.textContent = "Exfiltration Complete. Local Storage Corrupted.";
+    currentTask.style.color = "#30d158";
+    startIosCountdown();
+  }
+}
+
+function startIosCountdown() {
+  countdownArea.style.display = "block";
+  let count = 5;
+  timerDisplay.textContent = "0" + count;
+
+  const cdTimer = setInterval(() => {
+    count--;
+    timerDisplay.textContent = "0" + count;
+
+    if (count <= 0) {
+      clearInterval(cdTimer);
+      
+      // Cambia le scritte finali impostando lo stato di "morte" del sistema
+      document.querySelector(".alert-header").style.background = "#550000";
+      document.querySelector(".alert-header h1").textContent = "❌ IPHONE BRICKED";
+      document.querySelector(".alert-header p").textContent = "NAND MEMORY DESTROYED";
